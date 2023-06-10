@@ -1,0 +1,5 @@
+# Replace paths in OpenPhotoShop.py to local path
+# This code first opens Photoshop then converts 0-9 text to image and export
+# Run command below in terminal
+
+pip3 OpenPhotoShop.py

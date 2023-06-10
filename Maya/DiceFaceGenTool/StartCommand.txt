@@ -1,0 +1,15 @@
+#Paste code below into Maya-Windows-General Editor-Script Editor-Python
+#This command imports requiered script and load it and opens the GUI
+#Last Updated: 06/10/23
+#
+
+import sys
+#Replace path below to your local path
+sys.path.insert(0,'X:\\your_workspace\\Tools\\Maya\\DiceFaceGenTool\\')
+
+from importlib import reload
+
+import DiceFaceGen
+
+reload(DiceFaceGen)
+DiceFaceGen.openWindow()

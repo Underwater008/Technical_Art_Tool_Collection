@@ -32,7 +32,10 @@ class MayaUITemplate(QtWidgets.QWidget):
 
         # Set the widget path dynamically
         current_script_dir = os.path.dirname(os.path.realpath(__file__))
-        self.widgetPath = os.path.join(current_script_dir, 'UIs')
+        # Go up one directory
+        parent_dir = os.path.dirname(current_script_dir)
+        # Construct the UIs folder path
+        self.widgetPath = os.path.join(parent_dir, 'UIs')
 
         self.widget = QtUiTools.QUiLoader().load(os.path.join(self.widgetPath, 'FaceGenUI.ui'))
         self.widget.setParent(self)
