@@ -52,7 +52,7 @@ class MayaUITemplate(QtWidgets.QWidget):
         self.radBtn_Cube = self.widget.findChild(QtWidgets.QRadioButton, 'radBtn_Cube')
         self.radBtn_Cylinder = self.widget.findChild(QtWidgets.QRadioButton, 'radBtn_Cylinder')
         self.spinBox_MeshW = self.widget.findChild(QtWidgets.QDoubleSpinBox, 'spinBox_MeshW')
-        self.spinBox_IntrudeMax = self.widget.findChild(QtWidgets.QDoubleSpinBox, 'spinBox_IntrudeMax')
+        self.spinBox_ExtrudeMax = self.widget.findChild(QtWidgets.QDoubleSpinBox, 'spinBox_IntrudeMax')
         self.lineEdit_ImagePath = self.widget.findChild(QtWidgets.QLineEdit, 'lineEdit_ImagePath')
         # assign functionality to buttons
         self.btn_Submit.clicked.connect(self.submit)
@@ -112,45 +112,67 @@ class MayaUITemplate(QtWidgets.QWidget):
             print('No transform is selected.')
         else:
             transform = selected_transforms[0]
-
-        # Get the selected transform
-        selected_transforms = cmds.ls(selection=True, type='transform')
-        if not selected_transforms:
-            print('No transform is selected.')
-        else:
-            transform = selected_transforms[0]
-        
+    
             # Get the shape node of the transform
             shape_node = cmds.listRelatives(transform, shapes=True, fullPath=True)
             if not shape_node:
                 print('The selected transform does not have a shape node.')
             else:
                 shape_node = shape_node[0]
-        
+    
                 # Get all shading nodes connected to the shape node
                 shading_nodes = cmds.listConnections(shape_node, type='shadingEngine')
-                processed_shaders = set()  # Set to keep track of processed shading nodes
-        
+                self.processed_shaders = set()  # Set to keep track of processed shading nodes
+    
                 if not shading_nodes:
                     print('No shading nodes found on the selected transform.')
                 else:
                     for shading_node in shading_nodes:
                         # Check if the shading node has already been processed
-                        if shading_node in processed_shaders:
+                        if shading_node in self.processed_shaders:
                             continue
-        
+    
                         # Get the surface shader connected to the shading node
                         surface_shader = cmds.listConnections(shading_node + '.surfaceShader')
                         if not surface_shader:
                             print('No surface shader found for shading node:', shading_node)
                         else:
-                            # Set the transparency attribute of the surface shader to (1, 1, 1)
+                            # Set the transparency attribute of the surface shader to (0, 0, 0)
                             cmds.setAttr(surface_shader[0] + '.transparency', 0, 0, 0, type='double3')
-        
+    
                             print('Shader:', shading_node)
-        
+    
                         # Add the shading node to the processed set
-                        processed_shaders.add(shading_node)
+                        self.processed_shaders.add(shading_node)
+
+        # Call the select_objects_and_extrude method after post-processing is done
+        self.select_objects_and_extrude()
+
+    def select_objects_and_extrude(self):
+        # Iterate over all processed shaders
+        for shading_node in self.processed_shaders:
+            # Get the surface shader connected to the current shading node
+            surface_shader = cmds.listConnections(shading_node + '.surfaceShader')
+    
+            # If there's a surface shader connected
+            if surface_shader:
+                # Get the color attribute of the surface shader
+                color_attr = cmds.getAttr(surface_shader[0] + '.color')
+    
+                # If there's a color attribute for the shader
+                if color_attr:
+                    # Check if color is black by verifying if all RGB values are 0.0
+                    if all(value == 0.0 for value in color_attr[0]):
+                        # Set self.black_shader to the current surface shader if its color is black
+                        self.black_shader = surface_shader[0]
+                        print('Black shader identified:', self.black_shader)
+                        # Select all objects with the identified black shader
+                        cmds.hyperShade(objects=self.black_shader)
+
+                        # Apply extrusion to the entire selected object
+                        cmds.polyExtrudeFacet(localTranslateZ=self.spinBox_ExtrudeMax.value())
+
+
 
     def resizeEvent(self, event):
         """
